@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff8f4">
+<title>程瑾瑶 · 生日快乐</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0c14;overflow:hidden;
+    -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  canvas{display:block;width:100vw;height:100vh}
+  #gate{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:5vw;
+    background:radial-gradient(120% 85% at 50% 28%,#fffbf7 0%,#fdeef3 52%,#f6d7e4 100%);
+    transition:opacity .9s ease, visibility .9s}
+  #gate.out{opacity:0;visibility:hidden;pointer-events:none}
+  .gk{font:400 clamp(10px,1.1vw,13px)/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    letter-spacing:.44em;color:#c98fa5;margin-bottom:2.2vh;text-indent:.44em}
+  .gt{margin:0;font-family:"Songti SC","STSong","Source Han Serif SC","Noto Serif SC",serif;
+    font-size:clamp(34px,6.2vmin,72px);line-height:1.2;letter-spacing:.08em;color:#3a2f36;font-weight:700}
+  .gs{margin:1.6vh 0 0;font:400 clamp(12px,1.7vmin,16px)/1.9 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    letter-spacing:.2em;color:#b58c9c}
+  .gb{margin-top:5vh;border:0;cursor:pointer;background:#fff;color:#c8406b;border-radius:999px;
+    padding:clamp(13px,1.9vh,18px) clamp(28px,4.2vmin,40px);
+    font:600 clamp(14px,1.9vmin,17px)/1 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    letter-spacing:.14em;box-shadow:0 12px 34px rgba(190,110,140,.26);
+    animation:breathe 2.4s ease-in-out infinite}
+  .gb:active{transform:scale(.97)}
+  @keyframes breathe{0%,100%{transform:scale(1);box-shadow:0 12px 34px rgba(190,110,140,.26)}
+    50%{transform:scale(1.035);box-shadow:0 16px 40px rgba(190,110,140,.34)}}
+  .gh{margin-top:2.4vh;font:400 clamp(10px,1.3vmin,12px)/1 -apple-system,"PingFang SC",sans-serif;
+    letter-spacing:.22em;color:#c9a5b3}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="gate">
+  <div class="gk">FOR CHENG JIN YAO</div>
+  <h1 class="gt">程瑾瑶</h1>
+  <p class="gs">有一点点话，想慢慢说给你听</p>
+  <button class="gb" id="go">打开这封信 ♡</button>
+  <div class="gh">建议打开声音</div>
+</div>
+<script>
+/* =======================================================================
+   改字的地方：CFG 和 LETTER
+   ======================================================================= */
+const CFG = {
+  her   : "程瑾瑶",
+  him   : "张展",
+  under1: "程瑾瑶",
+  under2: "生日快乐",
+  under3: "愿你想要的，慢慢都会有",
+  kicker: "A LITTLE UNIVERSE, JUST FOR YOU",
+  line1 : "把星河，",
+  line2 : "送给你。",
+  cakeSub : "新的一岁，闪闪发亮",
+  cakeWish: "祝你生日快乐",
+  script  : "happy birthday",
+  scriptSub: "许个愿，吹灭蜡烛"
+};
+
+const LETTER = {
+  small: "A LETTER FOR YOU",
+  to   : "致 程瑾瑶",
+  paras: [
+    "新的一岁，愿你把喜欢的日子过得闪闪发亮，也允许偶尔慢下来，好好拥抱每一个普通的瞬间。",
+    "愿你走过的路都有风景，想见的人总会重逢；愿你勇敢、柔软，也一直拥有被爱和爱人的能力。",
+    "如果今晚抬头看见星星，就当作是我悄悄寄给你的祝福。生日快乐，不止今天。"
+  ],
+  sign : "—— 张展"
+};
+
+const WISHES = [
+  "生日快乐","岁岁平安","万事胜意","未来可期","心想事成","前程似锦",
+  "平安喜乐","得偿所愿","星河滚烫","人间理想","喜乐无忧","温柔坚定",
+  "好运常伴","被爱包围","天天开心","永远快乐","闪闪发光","所愿皆成",
+  "一路繁花","皆是坦途","不负韶华","顺遂无忧","笑口常开","岁月静好",
+  "幸福常在","事事顺心","梦想成真","如意吉祥","清风徐来","万事顺遂",
+  "心之所向","素履以往","眼里有光","心中有暖","春夏秋冬","都顺顺利利",
+  "想做的事","都能做成","喜欢的人","刚好也来","日子滚烫","人间可爱",
+  "慢慢来","都会有的","睡个好觉","吃顿好的","生日快乐呀","新的一岁",
+  "来日可期","步步高升","诸事顺遂","眉目舒展","心里有光","生活明朗",
+  "万物可爱","所行皆坦途","所求皆如愿","所遇皆温柔","所念皆星河","岁岁欢愉",
+  "年年胜意","时来运转","福气满满","甜甜蜜蜜","健健康康","开开心心",
+  "一切顺利","好梦成真","无忧无虑","自在如风","眉开眼笑","心安理得",
+  "岁岁常欢愉","万事皆胜意","眼里是星光","心里有远方","所遇皆良人","所得皆所期",
+  "不急不躁","慢慢变好","日子干净","阳光充足","被偏爱着","被温柔以待"
+];
+
+const SERIF  = '"Songti SC","STSong","Source Han Serif SC","Noto Serif SC","STZhongsong","SimSun",serif';
+const SANS   = '-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
+const SCRIPT = '"Segoe Script","Snell Roundhand","Bradley Hand","Brush Script MT",Georgia,serif';
+
+/* ---------------- 画布 / 布局 ---------------- */
+const cvs = document.getElementById('c');
+const ctx = cvs.getContext('2d', { alpha:false });
+let VW = 1080, VH = 1920, S = 1, DPR = 1, LAND = false, L = null;
+
+const DUR = 30.4, T_SPREAD = 6.7, T_CAKE = 12.3, T_LETTER = 20.6;
+const clamp = (v,a=0,b=1)=> v<a?a:v>b?b:v;
+const lerp  = (a,b,t)=> a+(b-a)*t;
+const ease  = t => 1-Math.pow(1-clamp(t),3);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+const R = mulberry32(20260308);
+
+function applyLayout(vw, vh){
+  const ar = vw/vh;
+  LAND = ar > 1.05;
+  if (!LAND){ VW = 1080; VH = 1080/ar; }
+  else      { VH = 1080; VW = 1080*ar; }
+  S = vw/VW;
+
+  L = {};
+  if (!LAND){
+    L.heart = { cx:VW*0.5, cy:VH*0.387, R:Math.min(VW*0.42, VH*0.235) };
+    L.under = { cx:VW*0.5, y1:VH*0.652, y2:VH*0.689, y3:VH*0.720, align:'center' };
+    L.cake  = { cx:VW*0.618, baseY:VH*0.74, s:VW/1080 };
+    L.text  = { x:VW*0.085, y1:VH*0.318, y2:VH*0.372, w1:VH*0.423,
+                y3:VH*0.472, y4:VH*0.521 };
+    L.script= { cx:VW*0.52, y1:VH*0.866, y2:VH*0.895 };
+    L.letter= { w:Math.min(VW*0.80, VH*0.90, 900), cy:VH*0.5 };
+  } else {
+    L.heart = { cx:VW*0.345, cy:VH*0.500, R:Math.min(VH*0.41, VW*0.225) };
+    L.under = { cx:VW*0.560, y1:VH*0.400, y2:VH*0.505, y3:VH*0.580, align:'left' };
+    L.cake  = { cx:VW*0.745, baseY:VH*0.835, s:Math.min(VH/980, 1.15) };
+    L.text  = { x:VW*0.055, y1:VH*0.300, y2:VH*0.375, w1:VH*0.440,
+                y3:VH*0.510, y4:VH*0.575 };
+    L.script= { cx:VW*0.055, y1:VH*0.780, y2:VH*0.845 };
+    L.letter= { w:Math.min(VW*0.58, VH*0.90, 900), cy:VH*0.5 };
+  }
+  L.k = L.heart.R/400;              // 卡片随大心缩放的系数
+  buildLabels();
+}
+
+function resize(){
+  const vw = innerWidth, vh = innerHeight;
+  DPR = Math.min(devicePixelRatio || 1, 2.5);
+  const maxPix = 4.2e6;                       // 大屏限一下像素，保证流畅
+  if (vw*vh*DPR*DPR > maxPix) DPR = Math.max(1, Math.sqrt(maxPix/(vw*vh)));
+  cvs.width = Math.round(vw*DPR); cvs.height = Math.round(vh*DPR);
+  cvs.style.width = vw+'px'; cvs.style.height = vh+'px';
+  applyLayout(vw, vh);
+}
+
+/* ---------------- 工具 ---------------- */
+function txt(s, x, y, o={}){
+  ctx.save();
+  ctx.font = o.font || `400 28px ${SANS}`;
+  ctx.fillStyle = o.fill || '#fff';
+  ctx.textAlign = o.align || 'left';
+  ctx.textBaseline = o.baseline || 'alphabetic';
+  if (o.alpha !== undefined) ctx.globalAlpha *= o.alpha;
+  if (o.shadow){ ctx.shadowColor = o.shadow; ctx.shadowBlur = o.blur || 18; }
+  if (o.ls){
+    const chars = [...s];
+    let total = 0;
+    for (const ch of chars) total += ctx.measureText(ch).width + o.ls;
+    total -= o.ls;
+    let cx = x;
+    if (o.align === 'center') cx = x - total/2;
+    else if (o.align === 'right') cx = x - total;
+    const al = ctx.textAlign; ctx.textAlign = 'left';
+    for (const ch of chars){ ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + o.ls; }
+    ctx.textAlign = al;
+  } else if (o.maxW) ctx.fillText(s, x, y, o.maxW);
+  else ctx.fillText(s, x, y);
+  ctx.restore();
+}
+function rrect(x,y,w,h,r){
+  r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function softCircle(x,y,r,c0){
+  const c1 = String(c0).replace(/[\d.]+\)\s*$/, '0)');
+  const g = ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,c0); g.addColorStop(1,c1);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+}
+function flashAt(t,c,half){
+  const u = (t-(c-half))/(2*half);
+  if (u<=0||u>=1) return 0;
+  return Math.pow(Math.sin(Math.PI*u), 2.2);
+}
+
+/* ---------------- 粒子（归一化坐标） ---------------- */
+const stars = Array.from({length:170},()=>({
+  nx:R(), ny:R(), r:.6+R()*2.0, ph:R()*6.28, sp:.5+R()*1.6, a:.25+R()*.7, warm:R()<.18
+}));
+const bokeh = Array.from({length:18},()=>({
+  nx:R(), ny:R(), r:60+R()*130, hue:[330,345,300,20,200,270][Math.floor(R()*6)],
+  ph:R()*6.28, sp:.1+R()*0.2, a:.05+R()*0.07, vy:.3+R()*0.6
+}));
+const nightBokeh = Array.from({length:34},()=>({
+  nx:R(), ny:R(), r:18+R()*64, hue:[200,215,265,300,42,8][Math.floor(R()*6)],
+  ph:R()*6.28, sp:.12+R()*0.35, a:.07+R()*0.15, vy:.5+R()*1.2
+}));
+
+/* ---------------- 心形（两个圆 + 尖角，轮廓更明确） ---------------- */
+function inHeart(x, y){
+  if ((x+0.40)*(x+0.40) + (y+0.22)*(y+0.22) < 0.16) return true;
+  if ((x-0.40)*(x-0.40) + (y+0.22)*(y+0.22) < 0.16) return true;
+  if (y > -0.22){
+    const t = (y+0.22)/1.20;
+    return Math.abs(x) < 0.80*(1-t);
+  }
+  return false;
+}
+function heartPath(cx, cy, R){
+  ctx.beginPath();
+  ctx.arc(cx-0.40*R, cy-0.22*R, 0.40*R, 0, 6.2832);
+  ctx.moveTo(cx+0.80*R, cy-0.22*R);
+  ctx.arc(cx+0.40*R, cy-0.22*R, 0.40*R, 0, 6.2832);
+  ctx.closePath();
+}
+function heartGlow(cx, cy, R){
+  ctx.beginPath();
+  ctx.arc(cx-0.40*R, cy-0.22*R, 0.40*R, 0, 6.2832);
+  ctx.moveTo(cx-0.80*R, cy-0.22*R);
+  ctx.arc(cx+0.40*R, cy-0.22*R, 0.40*R, 0, 6.2832);
+  ctx.moveTo(cx-0.80*R, cy-0.22*R);
+  ctx.lineTo(cx+0.80*R, cy-0.22*R);
+  ctx.lineTo(cx, cy+0.98*R);
+  ctx.closePath();
+}
+const POOL = (()=>{ const p = WISHES.slice();
+  for (let i=p.length-1;i>0;i--){ const j = Math.floor(R()*(i+1)); [p[i],p[j]] = [p[j],p[i]]; }
+  return p; })();
+
+let labels = [], extras = [];
+
+function buildLabels(){
+  labels = []; extras = [];
+  const { cx, cy, R:HR } = L.heart, k = L.k;
+  const stepX = 88*k, stepY = 40*k, M = 0.045;
+  let wi = 0;
+  for (let gy = -0.62*HR; gy <= 0.98*HR; gy += stepY){
+    for (let gx = -0.80*HR; gx <= 0.80*HR; gx += stepX){
+      const nx = gx/HR, ny = gy/HR;
+      if (!(inHeart(nx,ny) && inHeart(nx-M,ny) && inHeart(nx+M,ny)
+            && inHeart(nx,ny-M) && inHeart(nx,ny+M))) continue;
+      const wish = POOL[(wi++) % POOL.length];
+      ctx.save(); ctx.font = `400 ${17*k}px ${SERIF}`;
+      const tw = ctx.measureText(wish).width; ctx.restore();
+      const dn = clamp(Math.hypot(gx,gy)/(HR*1.05));
+      labels.push({
+        wish, x:cx+gx, y:cy+gy, w:tw+20*k, h:34*k,
+        rot:(R()-.5)*0.1,
+        from:{ x:cx+gx*0.5, y:cy+gy*0.5 },
+        delay: 0.15 + dn*1.55 + R()*0.10,
+        col:['#fff8f6','#fff7ef','#fdf6ff','#f7fbff','#fffdf2','#fff6fb'][Math.floor(R()*6)],
+        sx:0, sy:0, srot:0, ssc:1
+      });
+    }
+  }
+  const cols = Math.max(5, Math.round(VW/160)), rows = Math.max(6, Math.round(VH/150));
+  const slots = [];
+  const pw = 120, ph = 50;
+  for (let r=0;r<rows;r++) for (let c=0;c<cols;c++)
+    slots.push({
+      x: clamp((c+0.5)/cols*VW + (R()-.5)*70, pw, VW-pw),
+      y: clamp((r+0.5)/rows*VH + (R()-.5)*60, ph, VH-ph)
+    });
+  labels.forEach((l,i)=>{
+    const s = slots[(i*37) % slots.length];
+    l.sx = s.x; l.sy = s.y;
+    l.srot = (R()-.5)*0.24;
+    l.ssc = (1.12 + R()*0.22) * Math.max(0.85, k);
+  });
+  for (let i=0;i<20;i++){
+    const wish = POOL[(wi++) % POOL.length];
+    ctx.save(); ctx.font = `400 ${17*k}px ${SERIF}`;
+    const tw = ctx.measureText(wish).width; ctx.restore();
+    extras.push({
+      wish, w:tw+20*k, h:34*k, x:120+R()*(VW-240), y:80+R()*(VH-160), rot:(R()-.5)*0.26,
+      col:['#fff8f6','#fff7ef','#fdf6ff','#f7fbff','#fffdf2','#fff6fb'][Math.floor(R()*6)],
+      delay:R()*0.9, sc:(1.05+R()*0.2)*Math.max(0.85,k)
+    });
+  }
+}
+
+/* ---------------- 场景一 ---------------- */
+function drawWishCard(x,y,rot,sc,w,h,wish,col,a,k){
+  ctx.save();
+  ctx.globalAlpha *= a;
+  ctx.translate(x,y); ctx.rotate(rot); ctx.scale(sc,sc);
+  ctx.fillStyle = 'rgba(180,120,150,.10)';
+  rrect(-w/2+2, -h/2+7*k, w, h, 11*k); ctx.fill();
+  ctx.fillStyle = col;
+  rrect(-w/2, -h/2, w, h, 10*k); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = Math.max(1,1.1*k); ctx.stroke();
+  txt(wish, 0, 6*k, {font:`400 ${17*k}px ${SERIF}`, fill:'#4a3a42', align:'center'});
+  ctx.restore();
+}
+
+function drawHeartScene(t, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const m = ease(clamp((t-T_SPREAD)/1.35));
+  const k = L.k;
+
+  const g = ctx.createRadialGradient(VW/2, VH*0.38, 100, VW/2, VH*0.47, Math.max(VW,VH)*0.75);
+  g.addColorStop(0,'#fffdfb'); g.addColorStop(.5,'#fdf1f5'); g.addColorStop(1,'#f8dde9');
+  ctx.fillStyle = g; ctx.fillRect(0,0,VW,VH);
+  if (m > 0.01){
+    ctx.save(); ctx.globalAlpha = alpha*m*.85;
+    const g2 = ctx.createRadialGradient(VW/2, VH*0.47, 80, VW/2, VH*0.5, Math.max(VW,VH)*0.7);
+    g2.addColorStop(0,'#fff4f8'); g2.addColorStop(.55,'#fbe1ee'); g2.addColorStop(1,'#f4cddf');
+    ctx.fillStyle = g2; ctx.fillRect(0,0,VW,VH);
+    ctx.restore();
+  }
+
+  for (const b of bokeh){
+    const x = b.nx*VW;
+    const yy = ((b.ny*VH + t*b.vy*40) % (VH+300) + VH+300) % (VH+300) - 150;
+    ctx.globalAlpha = alpha * b.a * (.6+.4*Math.sin(t*b.sp+b.ph));
+    const gg = ctx.createRadialGradient(x, yy, b.r*.2, x, yy, b.r);
+    gg.addColorStop(0, `hsla(${b.hue},80%,80%,.75)`);
+    gg.addColorStop(1, `hsla(${b.hue},80%,70%,0)`);
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, yy, b.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = alpha;
+
+  const bt = (t-2.2)*0.85;
+  const beat = bt > 0 ? (Math.exp(-Math.pow(((bt%1)-0.10)/0.075,2))*0.55
+                      + Math.exp(-Math.pow(((bt%1)-0.33)/0.075,2))*0.26) : 0;
+  const zoom = 1 + beat*0.028*(1-m);
+
+  const HC = L.heart;
+  ctx.save();
+  ctx.translate(HC.cx, HC.cy); ctx.scale(zoom, zoom); ctx.translate(-HC.cx, -HC.cy);
+
+  ctx.save();
+  ctx.globalAlpha = alpha * clamp((t-1.2)/1.0) * 0.55;
+  ctx.shadowColor = 'rgba(255,190,215,.85)'; ctx.shadowBlur = 90;
+  ctx.fillStyle = 'rgba(255,212,229,.55)';
+  heartGlow(HC.cx, HC.cy, HC.R);
+  ctx.fill();
+  ctx.restore();
+
+  for (const l of labels){
+    const p = clamp((t-l.delay)/1.6);
+    const e = ease(p);
+    if (e <= 0.001) continue;
+    const tx = lerp(l.x, l.sx, m), ty = lerp(l.y, l.sy, m);
+    const rot = lerp(l.rot, l.srot, m);
+    const sc = lerp(1, l.ssc, m) * lerp(0.55, 1, e);
+    const x = lerp(l.from.x, tx, e), y = lerp(l.from.y, ty, e);
+    drawWishCard(x, y, rot, sc, l.w, l.h, l.wish, l.col, e, k);
+  }
+  if (m > 0.02){
+    for (const ex of extras){
+      const a = clamp((t-T_SPREAD-0.35-ex.delay)/0.7) * m;
+      if (a <= 0.001) continue;
+      drawWishCard(ex.x, ex.y, ex.rot, ex.sc, ex.w, ex.h, ex.wish, ex.col, a, k);
+    }
+  }
+  ctx.restore();
+
+  const ta = clamp((t-2.9)/0.9) * (1-m);
+  if (ta > 0.001){
+    const U = L.under;
+    if (!LAND){
+      txt(CFG.under1, U.cx, U.y1, {font:`400 25px ${SANS}`, fill:'rgba(160,112,130,.85)', align:'center', ls:10, alpha:ta});
+      txt(CFG.under2, U.cx, U.y2, {font:`700 62px ${SERIF}`, fill:'#b3123c', align:'center', ls:6, alpha:ta,
+          shadow:'rgba(190,60,100,.22)', blur:26});
+      txt(CFG.under3, U.cx, U.y3, {font:`400 22px ${SANS}`, fill:'rgba(150,118,132,.8)', align:'center', ls:3,
+          alpha:clamp((t-3.5)/0.9)*(1-m)});
+    } else {
+      txt(CFG.under1, U.cx, U.y1, {font:`400 26px ${SANS}`, fill:'rgba(160,112,130,.85)', ls:12, alpha:ta});
+      txt(CFG.under2, U.cx, U.y2, {font:`700 86px ${SERIF}`, fill:'#b3123c', ls:8, alpha:ta,
+          shadow:'rgba(190,60,100,.22)', blur:30});
+      txt(CFG.under3, U.cx, U.y3, {font:`400 26px ${SANS}`, fill:'rgba(150,118,132,.8)', ls:4,
+          alpha:clamp((t-3.5)/0.9)*(1-m)});
+    }
+  }
+  ctx.restore();
+}
+
+/* ---------------- 蛋糕 ---------------- */
+const tierStars = [0,1,2].map(i=>{
+  const r = mulberry32(700+i*37);
+  return Array.from({length:34},()=>({ x:r()*2-1, y:r(), s:.5+r()*1.9, ph:r()*6.28, gold:r()<.28 }));
+});
+
+function drawTier(yT, yB, rxT, rxB, idx, t){
+  const ryT = rxT*0.27, ryB = rxB*0.27;
+  ctx.beginPath();
+  ctx.moveTo(-rxT, yT);
+  ctx.lineTo(-rxB, yB);
+  ctx.ellipse(0, yB, rxB, ryB, 0, Math.PI, 0, true);
+  ctx.lineTo(rxT, yT);
+  ctx.ellipse(0, yT, rxT, ryT, 0, 0, Math.PI, false);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(-rxB, 0, rxB, 0);
+  g.addColorStop(0,'#0a0f2c'); g.addColorStop(.16,'#1b2458'); g.addColorStop(.44,'#2a3677');
+  g.addColorStop(.66,'#1b2452'); g.addColorStop(.86,'#0e1434'); g.addColorStop(1,'#070a1c');
+  ctx.fillStyle = g; ctx.fill();
+
+  ctx.save(); ctx.clip();
+  for (const st of tierStars[idx]){
+    const yy = lerp(yB, yT, st.y);
+    const tw = .3 + .7*Math.abs(Math.sin(t*1.6 + st.ph));
+    ctx.globalAlpha = tw*.85;
+    ctx.fillStyle = st.gold ? '#ffd9a0' : '#cfe6ff';
+    ctx.beginPath(); ctx.arc(st.x*rxB*.92, yy, st.s, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = .1;
+  const sg = ctx.createLinearGradient(-rxB*.5, 0, rxB*.1, 0);
+  sg.addColorStop(0,'rgba(255,255,255,.8)'); sg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = sg; ctx.fillRect(-rxB, yT-ryT, rxB*1.4, (yB-yT)+ryB*2);
+  ctx.restore();
+
+  const gt = ctx.createLinearGradient(0, yT-ryT, 0, yT+ryT);
+  gt.addColorStop(0,'#fffdf6'); gt.addColorStop(.58,'#f5ecd9'); gt.addColorStop(1,'#ddceb1');
+  ctx.beginPath(); ctx.ellipse(0, yT, rxT, ryT, 0, 0, 6.2832);
+  ctx.fillStyle = gt; ctx.fill();
+  ctx.strokeStyle = 'rgba(214,178,112,.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  const n = Math.max(6, Math.round(rxT/15));
+  for (let k=0;k<n;k++){
+    const a = Math.PI*(k+.5)/n;
+    const x = Math.cos(a)*rxT*0.985, y = yT + Math.sin(a)*ryT*0.92;
+    ctx.beginPath(); ctx.arc(x, y+7, rxT/n*0.62, 0, 6.2832);
+    ctx.fillStyle = 'rgba(252,247,234,.97)'; ctx.fill();
+  }
+  const rr = mulberry32(1000+idx*13);
+  for (let k=0;k<5;k++){
+    const a = Math.PI*(0.1+rr()*0.8);
+    const x = Math.cos(a)*rxT*0.96, y = yT + Math.sin(a)*ryT*0.9;
+    const len = 26 + rr()*46, w = 15 + rr()*10;
+    ctx.beginPath();
+    ctx.moveTo(x-w/2, y);
+    ctx.bezierCurveTo(x-w/2, y+len*.65, x-w*.28, y+len, x, y+len);
+    ctx.bezierCurveTo(x+w*.28, y+len, x+w/2, y+len*.65, x+w/2, y);
+    ctx.fillStyle = 'rgba(251,245,231,.97)'; ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(214,178,112,.35)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.ellipse(0, yB, rxB, ryB, 0, Math.PI*0.02, Math.PI*0.98); ctx.stroke();
+}
+
+function candle(x, yBase, h, t, ph){
+  const w = 15;
+  const g = ctx.createLinearGradient(x-w/2,0,x+w/2,0);
+  g.addColorStop(0,'#cfc6b4'); g.addColorStop(.32,'#fffdf4'); g.addColorStop(.62,'#f3e9d7'); g.addColorStop(1,'#c7bda9');
+  rrect(x-w/2, yBase-h, w, h, 6); ctx.fillStyle = g; ctx.fill();
+  ctx.fillStyle = 'rgba(214,178,112,.45)';
+  ctx.fillRect(x-w/2, yBase-h*0.52, w, 2);
+  ctx.strokeStyle = '#2a2320'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, yBase-h); ctx.lineTo(x, yBase-h-7); ctx.stroke();
+
+  const f = 1 + Math.sin(t*8.6+ph)*0.075 + Math.sin(t*13.9+ph)*0.04;
+  const fy = yBase-h-9;
+  softCircle(x, fy-16, 74*f, 'rgba(255,176,86,.30)');
+  softCircle(x, fy-13, 26*f, 'rgba(255,240,190,.75)');
+  ctx.beginPath();
+  ctx.moveTo(x, fy+7);
+  ctx.bezierCurveTo(x-7.5, fy-7, x-5, fy-22, x, fy-29*f);
+  ctx.bezierCurveTo(x+5, fy-22, x+7.5, fy-7, x, fy+7);
+  const fg = ctx.createLinearGradient(x, fy-29, x, fy+7);
+  fg.addColorStop(0,'#fff8d8'); fg.addColorStop(.42,'#ffc861'); fg.addColorStop(1,'#ff7a35');
+  ctx.fillStyle = fg; ctx.fill();
+}
+
+function drawCake(cx, baseY, s, t){
+  ctx.save();
+  ctx.translate(cx, baseY); ctx.scale(s,s);
+  ctx.translate(0, Math.sin(t*0.9)*7);
+  softCircle(0, -250, 580, 'rgba(96,88,225,.15)');
+  softCircle(0, -400, 300, 'rgba(255,190,110,.13)');
+
+  ctx.beginPath(); ctx.ellipse(0, 0, 238, 50, 0, 0, 6.2832);
+  const gp = ctx.createLinearGradient(0,-50,0,50);
+  gp.addColorStop(0,'rgba(255,255,255,.40)');
+  gp.addColorStop(.45,'rgba(168,198,240,.20)');
+  gp.addColorStop(1,'rgba(48,78,150,.10)');
+  ctx.fillStyle = gp; ctx.fill();
+  ctx.strokeStyle = 'rgba(216,234,255,.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.ellipse(0,0,224,42,0,Math.PI*1.05,Math.PI*1.62); ctx.stroke();
+
+  for (let i=0;i<2;i++){
+    ctx.save(); ctx.rotate(-0.16 + i*0.3);
+    ctx.setLineDash([2,11]);
+    ctx.strokeStyle = `rgba(224,204,255,${.22-i*.07})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.ellipse(0,-210, 288+i*30, 56+i*8, 0, 0, 6.2832); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.setLineDash([]);
+
+  drawTier(-150,  -6,  198, 214, 0, t);
+  drawTier(-272, -144, 150, 166, 1, t);
+  drawTier(-378, -266, 102, 116, 2, t);
+
+  candle(-56, -378, 74, t, 0.0);
+  candle(  0, -378, 92, t, 1.7);
+  candle( 56, -378, 74, t, 3.1);
+
+  const rr = mulberry32(55);
+  for (let i=0;i<40;i++){
+    const a = rr()*6.28, rad = 210 + rr()*130;
+    const x = Math.cos(a)*rad, y = -170 + Math.sin(a)*rad*0.55 - rr()*90;
+    const tw = .2 + .8*Math.abs(Math.sin(t*1.7 + i));
+    ctx.globalAlpha = tw*.8;
+    ctx.fillStyle = i%3===0 ? '#ffe6b0' : '#e8f2ff';
+    ctx.beginPath(); ctx.arc(x, y, .8+rr()*1.6, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/* ---------------- 场景二 ---------------- */
+function drawCakeScene(t, alpha){
+  ctx.save();
+  const g = ctx.createRadialGradient(VW*0.55, VH*0.60, 60, VW*0.55, VH*0.58, Math.max(VW,VH)*0.72);
+  g.addColorStop(0,'#151c41'); g.addColorStop(.45,'#080c22'); g.addColorStop(1,'#03050f');
+  ctx.fillStyle = g; ctx.fillRect(0,0,VW,VH);
+  softCircle(VW*0.14, VH*0.80, 720, 'rgba(84,46,168,.24)');
+  softCircle(VW*0.89, VH*0.38, 620, 'rgba(28,88,150,.18)');
+  softCircle(VW*0.82, VH*0.88, 560, 'rgba(150,70,120,.14)');
+
+  const z = 1 + 0.04*ease(clamp(t/8.4));
+  ctx.translate(VW/2, VH*0.56); ctx.scale(z,z); ctx.translate(-VW/2, -VH*0.56);
+
+  ctx.globalAlpha = alpha;
+  for (const s of stars){
+    const x = s.nx*VW, y = s.ny*VH;
+    const tw = .35 + .65*Math.abs(Math.sin(t*s.sp + s.ph));
+    ctx.globalAlpha = alpha*s.a*tw;
+    ctx.fillStyle = s.warm ? '#ffe6c2' : '#eaf2ff';
+    ctx.beginPath(); ctx.arc(x + Math.sin(t*.1+s.ph)*3, y, s.r, 0, 6.2832); ctx.fill();
+    if (s.r > 2){
+      ctx.globalAlpha = alpha*s.a*tw*.3;
+      softCircle(x, y, s.r*7, s.warm ? 'rgba(255,220,170,.5)' : 'rgba(210,230,255,.5)');
+    }
+  }
+  for (const b of nightBokeh){
+    const x = b.nx*VW;
+    const yy = ((b.ny*VH + t*b.vy*8) % (VH+300) + VH+300) % (VH+300) - 150;
+    ctx.globalAlpha = alpha*b.a*(.6+.4*Math.sin(t*b.sp+b.ph));
+    const gg = ctx.createRadialGradient(x, yy, b.r*.2, x, yy, b.r);
+    gg.addColorStop(0, `hsla(${b.hue},85%,72%,.85)`);
+    gg.addColorStop(.65, `hsla(${b.hue},85%,60%,.30)`);
+    gg.addColorStop(1, `hsla(${b.hue},85%,55%,0)`);
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, yy, b.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = alpha;
+
+  const cin = ease(clamp(t/0.8));
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(0, (1-cin)*80);
+  drawCake(L.cake.cx, L.cake.baseY, L.cake.s*lerp(.93,1,cin), t);
+  ctx.restore();
+
+  const t1 = clamp((t-0.55)/0.9), t2 = clamp((t-0.95)/0.9);
+  const T = L.text, titleSize = LAND ? 72 : 76;
+  ctx.globalAlpha = alpha;
+  txt(CFG.kicker, T.x, T.y1, {font:`400 17px ${SANS}`, fill:'rgba(214,226,255,.62)', ls:4.2, alpha:t1});
+  txt(CFG.line1, T.x, T.y2, {font:`700 ${titleSize}px ${SERIF}`, fill:'#fff', ls:2, alpha:t1,
+      shadow:'rgba(255,255,255,.2)', blur:14});
+  txt(CFG.line2, T.x, T.y2+titleSize*1.28, {font:`700 ${titleSize}px ${SERIF}`, fill:'#fff', ls:2, alpha:t1,
+      shadow:'rgba(255,255,255,.2)', blur:14});
+  ctx.save();
+  ctx.globalAlpha = alpha*t2;
+  ctx.fillStyle = 'rgba(233,196,131,.9)';
+  ctx.fillRect(T.x+4, T.y2+titleSize*1.28+42, 52, 2);
+  ctx.restore();
+  txt(CFG.cakeSub, T.x, T.y2+titleSize*1.28+100, {font:`400 ${LAND?28:30}px ${SANS}`, fill:'rgba(226,232,255,.72)', ls:1.5, alpha:t2});
+  const gw = ctx.createLinearGradient(T.x, T.y2+titleSize*1.28+130, T.x+368, T.y2+titleSize*1.28+200);
+  gw.addColorStop(0,'#ffe9bd'); gw.addColorStop(.5,'#f3cf8e'); gw.addColorStop(1,'#e2b06a');
+  txt(CFG.cakeWish, T.x, T.y2+titleSize*1.28+178, {font:`700 ${LAND?50:54}px ${SERIF}`, fill:gw, ls:3, alpha:t2,
+      shadow:'rgba(255,190,110,.3)', blur:20});
+
+  const SC = L.script;
+  txt(CFG.script, SC.cx, SC.y1, {font:`400 ${LAND?62:90}px ${SCRIPT}`, fill:'#f6e6cb',
+      align: LAND?'left':'center', alpha:clamp((t-2.0)/1.1), shadow:'rgba(255,220,160,.4)', blur:22});
+  txt(CFG.scriptSub, SC.cx, SC.y2, {font:`400 ${LAND?19:21}px ${SANS}`, fill:'rgba(226,232,255,.5)',
+      align: LAND?'left':'center', ls:3, alpha:clamp((t-2.4)/1.1)});
+
+  ctx.restore();
+}
+
+/* ---------------- 场景三 ---------------- */
+function wrapLines(s, maxW, font){
+  ctx.save(); ctx.font = font;
+  const lines = [], noStart = '，。、；：？！）》」』”’…—';
+  let cur = '';
+  for (const ch of s){
+    if (cur && ctx.measureText(cur+ch).width > maxW){
+      if (noStart.includes(ch) && cur.length > 1){
+        lines.push(cur.slice(0,-1)); cur = cur.slice(-1)+ch;
+      } else { lines.push(cur); cur = ch; }
+    } else cur += ch;
+  }
+  if (cur) lines.push(cur);
+  ctx.restore();
+  return lines;
+}
+
+function drawLetterScene(t, alpha){
+  ctx.save();
+  const g = ctx.createRadialGradient(VW*0.5, VH*0.40, 60, VW*0.5, VH*0.48, Math.max(VW,VH)*0.75);
+  g.addColorStop(0,'#131a3c'); g.addColorStop(.45,'#080c20'); g.addColorStop(1,'#03040c');
+  ctx.fillStyle = g; ctx.fillRect(0,0,VW,VH);
+  softCircle(VW*0.16, VH*0.90, 720, 'rgba(72,46,150,.20)');
+  softCircle(VW*0.87, VH*0.14, 620, 'rgba(28,80,140,.15)');
+  softCircle(VW/2, VH*0.49, 700, 'rgba(255,224,176,.08)');
+
+  for (const s of stars){
+    const x = s.nx*VW, y = s.ny*VH;
+    const tw = .3 + .7*Math.abs(Math.sin(t*0.55*s.sp + s.ph));
+    ctx.globalAlpha = s.a*tw*.7;
+    ctx.fillStyle = s.warm ? '#ffe6c2' : '#eaf2ff';
+    ctx.beginPath(); ctx.arc(x, y, s.r*.9, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = clamp(t/0.18);
+
+  const BW = L.letter.w, PAD = Math.round(BW*0.0835), TW = BW-PAD*2;
+  const fs = Math.round(BW*0.035), LH = Math.round(fs*1.87), GAP = Math.round(fs*0.84);
+  const bodyFont = `400 ${fs}px ${SANS}`;
+  const paraLines = LETTER.paras.map(p=>wrapLines(p, TW, bodyFont));
+  const totalLines = paraLines.reduce((a,l)=>a+l.length,0);
+  const bodyH = totalLines*LH + (paraLines.length-1)*GAP;
+  const headH = Math.round(BW*0.195), sigH = Math.round(BW*0.125);
+  const BH = PAD*2 + headH + bodyH + sigH;
+  const BX = (VW-BW)/2, BY = L.letter.cy - BH/2;
+
+  const rise = ease(clamp((t-0.1)/0.65));
+  ctx.save();
+  ctx.globalAlpha = clamp(t/0.18) * rise;
+  ctx.translate(0, (1-rise)*44);
+
+  const rr = Math.round(BW*0.023);
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 70; ctx.shadowOffsetY = 26;
+  rrect(BX, BY, BW, BH, rr); ctx.fillStyle = '#fdf7ec'; ctx.fill();
+  ctx.restore();
+  const pg = ctx.createLinearGradient(BX, BY, BX+BW, BY+BH);
+  pg.addColorStop(0,'#fffdf7'); pg.addColorStop(1,'#f7edda');
+  rrect(BX, BY, BW, BH, rr); ctx.fillStyle = pg; ctx.fill();
+  ctx.strokeStyle = 'rgba(214,183,140,.6)'; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.strokeStyle = 'rgba(214,183,140,.26)'; ctx.lineWidth = 1;
+  rrect(BX+13, BY+13, BW-26, BH-26, rr*0.6); ctx.stroke();
+
+  const left = BX+PAD;
+  txt(LETTER.small, left, BY+PAD+22, {font:`400 13px ${SANS}`, fill:'rgba(172,142,112,.9)', ls:5.5, alpha:clamp((t-0.35)/0.6)});
+  txt(LETTER.to, left, BY+PAD+Math.round(BW*0.105), {font:`700 ${Math.round(BW*0.053)}px ${SERIF}`, fill:'#2f2733', ls:2, alpha:clamp((t-0.5)/0.6)});
+  ctx.save();
+  ctx.globalAlpha = clamp(t/0.18)*clamp((t-0.62)/0.5);
+  ctx.fillStyle = 'rgba(206,168,116,.85)';
+  ctx.fillRect(left, BY+PAD+Math.round(BW*0.136), 96, 2);
+  ctx.restore();
+
+  let y = BY+PAD+headH+8;
+  const pTimes = [0.85, 1.6, 2.35];
+  paraLines.forEach((lines, pi)=>{
+    const pa = clamp((t-pTimes[pi])/0.75);
+    if (pa > 0.001){
+      ctx.globalAlpha = clamp(t/0.18)*pa;
+      lines.forEach((ln, li)=>{
+        txt(ln, left, y + li*LH + (1-pa)*12, {font: bodyFont, fill:'#3c3440', ls:.6});
+      });
+    }
+    y += lines.length*LH + GAP;
+  });
+
+  const sa = clamp((t-3.4)/0.8);
+  ctx.globalAlpha = clamp(t/0.18)*sa;
+  txt(LETTER.sign, BX+BW-PAD, BY+BH-PAD-Math.round(BW*0.04) + (1-sa)*10,
+      {font:`400 ${Math.round(BW*0.033)}px ${SANS}`, fill:'#6b5560', align:'right', ls:2});
+  txt('♡', BX+BW-PAD, BY+BH-PAD+Math.round(BW*0.01),
+      {font:`400 ${Math.round(BW*0.026)}px ${SANS}`, fill:'rgba(200,120,150,.7)', align:'right'});
+
+  ctx.restore();
+  ctx.restore();
+}
+
+/* ---------------- 时间轴 ---------------- */
+function draw(t){
+  t = clamp(t, 0, DUR);
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle = '#0b0c14';
+  ctx.fillRect(0,0,cvs.width,cvs.height);
+  ctx.setTransform(DPR*S,0,0,DPR*S,0,0);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,VW,VH); ctx.clip();
+
+  const aA = 1 - clamp((t-(T_CAKE-0.35))/0.5);
+  const aCake = (t >= T_CAKE ? 1 : 0) * (1-clamp((t-(T_LETTER-0.35))/0.45));
+  const aLet  = clamp((t-(T_LETTER+0.08))/0.4);
+
+  if (aA > 0.002) drawHeartScene(t, aA);
+  if (t >= T_CAKE) drawCakeScene(t-T_CAKE, aCake);
+  if (t >= T_LETTER) drawLetterScene(t-T_LETTER, aLet);
+  ctx.restore();
+
+  const fl = Math.max(flashAt(t, T_CAKE, 0.26), flashAt(t, T_LETTER, 0.26));
+  if (fl > 0.003){
+    ctx.setTransform(DPR*S,0,0,DPR*S,0,0);
+    ctx.globalAlpha = fl*0.94;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,VW,VH);
+    ctx.globalAlpha = 1;
+  }
+
+  if (EXPORT){
+    const fin = clamp((t-(DUR-1.0))/1.0);
+    if (fin > 0){
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.fillStyle = `rgba(4,5,12,${fin})`;
+      ctx.fillRect(0,0,cvs.width,cvs.height);
+    }
+  } else if (t > DUR-1.6){
+    txt('点一下 · 再看一遍', VW/2, VH*0.965, {font:`400 18px ${SANS}`, fill:'rgba(230,225,240,.45)', align:'center', ls:3});
+  }
+}
+
+/* ---------------- 播放 ---------------- */
+const EXPORT = /export/i.test(location.hash);
+let t0 = 0, playing = false, started = false;
+
+function loop(now){
+  const t = (now - t0)/1000;
+  draw(t);
+  if (t >= DUR) playing = false;
+  if (playing) requestAnimationFrame(loop);
+}
+function playFrom(sec){
+  t0 = performance.now() - sec*1000;
+  playing = true;
+  requestAnimationFrame(loop);
+}
+
+addEventListener('resize', ()=>{
+  resize();
+  if (started) draw(Math.min(DUR,(performance.now()-t0)/1000));
+});
+
+if (EXPORT){
+  const m = location.hash.match(/(\d+)x(\d+)/);
+  const EW = m ? +m[1] : 1080, EH = m ? +m[2] : 1920;
+  DPR = 1;
+  cvs.width = EW; cvs.height = EH;
+  cvs.style.width = EW+'px'; cvs.style.height = EH+'px';
+  document.documentElement.style.background = '#0b0c14';
+  document.getElementById('gate').style.display = 'none';
+  applyLayout(EW, EH);
+  S = EW/VW;
+  window.__renderAt = (t)=>{ draw(t); return true; };
+  window.__ready = true;
+  draw(0);
+} else {
+  resize();
+  const gate = document.getElementById('gate');
+  const start = ()=>{
+    if (started) return;
+    started = true;
+    gate.classList.add('out');
+    playFrom(0);
+    startMusic();
+  };
+  document.getElementById('go').addEventListener('click', start);
+  gate.addEventListener('click', start);
+  addEventListener('pointerdown', ()=>{
+    if (!started) return;
+    if (!playing) playFrom(0);
+  });
+}
+
+/* ---------------- 八音盒 ---------------- */
+let actx = null, musicOn = false;
+const MELODY = [
+  [67,.42],[67,.18],[69,.5],[67,.5],[72,.5],[71,1.0],
+  [67,.42],[67,.18],[69,.5],[67,.5],[74,.5],[72,1.0],
+  [67,.42],[67,.18],[79,.5],[76,.5],[72,.5],[74,.5],[72,1.1],
+  [65,.42],[65,.18],[64,.5],[60,.5],[62,.5],[60,1.1]
+];
+function startMusic(){
+  if (musicOn) return; musicOn = true;
+  try { actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ return; }
+  if (actx.state === 'suspended') actx.resume();
+  const master = actx.createGain(); master.gain.value = .15; master.connect(actx.destination);
+  const conv = actx.createConvolver();
+  const len = Math.floor(actx.sampleRate*2.2), buf = actx.createBuffer(2, len, actx.sampleRate);
+  for (let ch=0; ch<2; ch++){
+    const d = buf.getChannelData(ch);
+    for (let i=0;i<len;i++) d[i] = (Math.random()*2-1)*Math.pow(1-i/len, 3.2);
+  }
+  conv.buffer = buf;
+  const wet = actx.createGain(); wet.gain.value = .5;
+  conv.connect(wet); wet.connect(master); master.connect(conv);
+
+  const base = actx.currentTime + .12;
+  [0, 8.35, 17.1].forEach((off, pass)=>{
+    const amp = [1,.92,.72][pass];
+    let at = base + off;
+    for (const [m,d] of MELODY){
+      const f = 440*Math.pow(2,(m-69)/12);
+      [1, 2.01, 3.02].forEach((mul,k)=>{
+        const o = actx.createOscillator();
+        o.type = k===0 ? 'triangle' : 'sine';
+        o.frequency.value = f*mul;
+        const g = actx.createGain();
+        const peak = (k===0?.9:.22)*.5*amp;
+        g.gain.setValueAtTime(0, at);
+        g.gain.linearRampToValueAtTime(peak, at+.008);
+        g.gain.exponentialRampToValueAtTime(.0001, at+.9+k*.15);
+        o.connect(g); g.connect(master); o.start(at); o.stop(at+1.3+k*.15);
+      });
+      at += d*.62;
+    }
+  });
+}
+</script>
+</body>
+</html>
